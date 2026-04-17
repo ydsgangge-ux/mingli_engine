@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MingLi Engine - 命理预测系统</title>
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --card: #1a1a2e;
+            --border: #2a2a4a;
+            --text: #e0e0e0;
+            --text-muted: #8888aa;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --gold: #ffd700;
+            --success: #00b894;
+            --danger: #e17055;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .container { max-width: 920px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left h1 {
+            font-size: 2em;
+            background: linear-gradient(135deg, var(--gold), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-left p { color: var(--text-muted); font-size: 0.9em; }
+
+        /* 模型状态指示器 */
+        .model-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            font-size: 0.85em;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .model-badge:hover { border-color: var(--accent); }
+        .model-badge .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+        .model-badge .dot.connected { background: var(--success); }
+        .model-badge .dot.custom { background: var(--gold); }
+
+        /* Steps */
+        .steps { display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; }
+        .step {
+            padding: 8px 20px; border-radius: 20px;
+            background: var(--card); border: 1px solid var(--border);
+            font-size: 0.9em; color: var(--text-muted); transition: all 0.3s;
+        }
+        .step.active { border-color: var(--accent); color: var(--accent-light); background: rgba(108,92,231,0.1); }
+        .step.done { border-color: var(--success); color: var(--success); }
+
+        /* Cards */
+        .card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 1.2em; color: var(--accent-light);
+            margin-bottom: 16px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Form */
+        .form-row { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 160px; }
+        .form-group label {
+            display: block; font-size: 0.85em;
+            color: var(--text-muted); margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--bg);
+            color: var(--text); font-size: 0.95em; outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+        .form-group .hint { font-size: 0.78em; color: var(--text-muted); margin-top: 4px; }
+
+        /* Personality Test */
+        .question {
+            background: rgba(108,92,231,0.05); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px; margin-bottom: 14px;
+        }
+        .question .q-text { font-size: 0.95em; margin-bottom: 12px; }
+        .question .q-options { display: flex; gap: 10px; }
+        .q-option {
+            flex: 1; padding: 10px; border-radius: 8px;
+            border: 1px solid var(--border); cursor: pointer;
+            text-align: center; font-size: 0.9em; transition: all 0.2s; user-select: none;
+        }
+        .q-option:hover { border-color: var(--accent); background: rgba(108,92,231,0.1); }
+        .q-option.selected { border-color: var(--accent); background: rgba(108,92,231,0.2); color: var(--accent-light); }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 28px; border-radius: 8px; border: none;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), #8b5cf6); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(108,92,231,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-secondary:hover { border-color: var(--text-muted); }
+        .btn-sm { padding: 6px 16px; font-size: 0.85em; }
+        .btn-danger { background: rgba(225,112,85,0.15); border: 1px solid var(--danger); color: var(--danger); }
+        .btn-row { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+
+        /* Progress */
+        .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 20px 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
+        .status-text { text-align: center; color: var(--text-muted); font-size: 0.9em; }
+
+        /* ── 模型设置面板 ── */
+        .settings-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 100;
+            display: none; justify-content: center; align-items: flex-start;
+            padding-top: 40px; overflow-y: auto;
+        }
+        .settings-overlay.open { display: flex; }
+        .settings-panel {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 28px;
+            width: 560px; max-width: 95vw; max-height: 85vh;
+            overflow-y: auto; position: relative;
+        }
+        .settings-panel h2 {
+            font-size: 1.3em; color: var(--accent-light);
+            margin-bottom: 20px; border-bottom: none;
+        }
+        .close-btn {
+            position: absolute; top: 16px; right: 20px;
+            background: none; border: none; color: var(--text-muted);
+            font-size: 1.5em; cursor: pointer; line-height: 1;
+        }
+        .close-btn:hover { color: var(--text); }
+
+        /* Provider cards */
+        .provider-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px; margin-bottom: 20px;
+        }
+        .provider-card {
+            padding: 12px; border-radius: 10px;
+            border: 2px solid var(--border); background: var(--bg);
+            cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .provider-card:hover { border-color: var(--accent); }
+        .provider-card.selected { border-color: var(--accent); background: rgba(108,92,231,0.1); }
+        .provider-card .name { font-weight: 600; font-size: 0.95em; margin-bottom: 4px; }
+        .provider-card .status-dot {
+            display: inline-block; width: 6px; height: 6px;
+            border-radius: 50%; margin-right: 4px;
+        }
+        .provider-card .status-dot.ok { background: var(--success); }
+        .provider-card .status-dot.no { background: var(--text-muted); }
+        .provider-card .tag { font-size: 0.75em; color: var(--text-muted); }
+
+        /* Config form in settings */
+        .config-section { margin-top: 16px; }
+        .config-section h3 { font-size: 1em; color: var(--text-muted); margin-bottom: 10px; }
+        .model-select-row {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .model-select-row select { flex: 1; }
+        .model-select-row input { flex: 1; }
+        .key-hidden { font-family: monospace; letter-spacing: 2px; }
+
+        /* Test result */
+        .test-result {
+            padding: 10px 14px; border-radius: 8px; margin-top: 12px;
+            font-size: 0.9em; display: none;
+        }
+        .test-result.success { background: rgba(0,184,148,0.1); border: 1px solid var(--success); color: var(--success); display: block; }
+        .test-result.error { background: rgba(225,112,85,0.1); border: 1px solid var(--danger); color: var(--danger); display: block; }
+
+        /* Hidden */
+        .hidden { display: none !important; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 20px; right: 20px;
+            padding: 12px 20px; border-radius: 8px;
+            background: var(--danger); color: white;
+            font-size: 0.9em; z-index: 200; animation: fadeIn 0.3s;
+        }
+        .toast.success { background: var(--success); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; } }
+
+        @media (max-width: 600px) {
+            .form-row { flex-direction: column; }
+            .steps { flex-wrap: wrap; }
+            .header { flex-direction: column; gap: 12px; }
+            .header-left h1 { font-size: 1.5em; }
+            .provider-grid { grid-template-columns: repeat(2, 1fr); }
+            .settings-panel { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header with model indicator -->
+    <div class="header">
+        <div class="header-left">
+            <h1>MingLi Engine</h1>
+            <p>八字 / 紫微 / 奇门 / 多轮大模型推演</p>
+        </div>
+        <div class="model-badge" id="model-badge" onclick="openSettings()">
+            <span class="dot" id="model-dot"></span>
+            <span id="model-name">未配置模型</span>
+            <span style="margin-left:4px;font-size:0.8em;">&#9881;</span>
+        </div>
+    </div>
+
+    <div class="steps">
+        <div class="step active" id="step1">1. 基本信息</div>
+        <div class="step" id="step2">2. 心性测试</div>
+        <div class="step" id="step3">3. 生成报告</div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="section-info" class="card">
+        <h2>基本信息录入</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>姓名</label>
+                <input type="text" id="name" placeholder="请输入姓名">
+            </div>
+            <div class="form-group">
+                <label>性别</label>
+                <select id="gender">
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>出生年</label>
+                <input type="number" id="birth_year" placeholder="1990" min="1900" max="2100">
+            </div>
+            <div class="form-group">
+                <label>月</label>
+                <input type="number" id="birth_month" placeholder="3" min="1" max="12">
+            </div>
+            <div class="form-group">
+                <label>日</label>
+                <input type="number" id="birth_day" placeholder="15" min="1" max="31">
+            </div>
+            <div class="form-group">
+                <label>时（24h）</label>
+                <input type="number" id="birth_hour" placeholder="14" min="0" max="23">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>出生地</label>
+                <input type="text" id="birthplace" placeholder="北京">
+            </div>
+            <div class="form-group">
+                <label>经度（选填）</label>
+                <input type="number" id="longitude" placeholder="116.4" step="0.1">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>农历月（选填，紫微用）</label>
+                <input type="number" id="lunar_month" placeholder="" min="1" max="12">
+            </div>
+            <div class="form-group">
+                <label>农历日（选填，紫微用）</label>
+                <input type="number" id="lunar_day" placeholder="" min="1" max="30">
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="goToStep2()">下一步：心性测试</button>
+        </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="section-test" class="card hidden">
+        <h2>心性测试（10题）</h2>
+        <p style="color:var(--text-muted);margin-bottom:16px;font-size:0.9em;">
+            请根据第一直觉选择答案，测试结果将用于个性化路径推荐。
+        </p>
+        <div id="questions-container"></div>
+        <div class="btn-row">
+            <button class="btn btn-secondary" onclick="goToStep1()">上一步</button>
+            <button class="btn btn-primary" id="btn-generate" onclick="startGenerate()">生成命理报告</button>
+        </div>
+    </div>
+
+    <!-- Step 3: Generating -->
+    <div id="section-generating" class="card hidden">
+        <h2>正在生成报告</h2>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="status-text" id="status-text">正在排盘计算...</p>
+    </div>
+</div>
+
+<!-- Settings Overlay -->
+<div class="settings-overlay" id="settings-overlay">
+    <div class="settings-panel">
+        <button class="close-btn" onclick="closeSettings()">&times;</button>
+        <h2>模型设置</h2>
+        <p style="color:var(--text-muted);font-size:0.9em;margin-bottom:16px;">
+            选择大语言模型提供商，配置 API Key 后即可使用。
+        </p>
+
+        <!-- Provider Grid -->
+        <div class="provider-grid" id="provider-grid"></div>
+
+        <!-- Config Form -->
+        <div class="config-section" id="config-section">
+            <h3 id="config-title">配置详情</h3>
+
+            <div class="form-group" id="key-group">
+                <label id="key-label">API Key</label>
+                <input type="password" id="input-api-key" placeholder="sk-...">
+                <div class="hint" id="key-hint"></div>
+            </div>
+
+            <div class="form-group" id="url-group">
+                <label id="url-label">API 地址</label>
+                <input type="text" id="input-base-url" placeholder="https://api.example.com">
+                <div class="hint" id="url-hint"></div>
+            </div>
+
+            <div class="form-group">
+                <label>模型</label>
+                <div class="model-select-row">
+                    <select id="input-model-select">
+                        <option value="">-- 选择模型 --</option>
+                    </select>
+                    <input type="text" id="input-model-custom" class="hidden" placeholder="输入模型名称">
+                </div>
+            </div>
+
+            <div class="test-result" id="test-result"></div>
+
+            <div class="btn-row" style="justify-content:flex-start;gap:10px;margin-top:16px;">
+                <button class="btn btn-secondary btn-sm" onclick="testModel()">测试连接</button>
+                <button class="btn btn-primary btn-sm" onclick="saveConfig()">保存配置</button>
+                <button class="btn btn-danger btn-sm" id="btn-reset" onclick="resetConfig()">恢复默认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const API = '';
+let questions = [];
+let answers = {};
+let taskId = null;
+let providers = [];
+let selectedProvider = '';
+
+// ── Settings Logic ──
+async function loadProviders() {
+    try {
+        const resp = await fetch(API + '/api/llm/providers');
+        const data = await resp.json();
+        providers = data.providers;
+        renderProviders(data.current);
+        updateBadge(data.current);
+    } catch(e) { console.error('加载提供商失败', e); }
+}
+
+function renderProviders(currentId) {
+    selectedProvider = currentId || '';
+    const grid = document.getElementById('provider-grid');
+    grid.innerHTML = providers.map(p => `
+        <div class="provider-card ${p.id === selectedProvider ? 'selected' : ''}"
+             onclick="selectProvider('${p.id}')">
+            <div class="name">${p.label}</div>
+            <div>
+                <span class="status-dot ${p.has_key || p.id === 'ollama' ? 'ok' : 'no'}"></span>
+                <span class="tag">${p.need_key ? (p.has_key ? '已配置' : '需配置Key') : '无需Key'}</span>
+            </div>
+        </div>
+    `).join('');
+    if (selectedProvider) selectProvider(selectedProvider);
+}
+
+function selectProvider(id) {
+    selectedProvider = id;
+    const p = providers.find(x => x.id === id);
+    if (!p) return;
+
+    // Highlight
+    document.querySelectorAll('.provider-card').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`.provider-card[onclick="selectProvider('${id}')"]`)?.classList.add('selected');
+
+    // Config section
+    const keyGroup = document.getElementById('key-group');
+    const urlGroup = document.getElementById('url-group');
+    const keyLabel = document.getElementById('key-label');
+    const keyHint = document.getElementById('key-hint');
+    const urlHint = document.getElementById('url-hint');
+    const modelSelect = document.getElementById('input-model-select');
+    const modelCustom = document.getElementById('input-model-custom');
+
+    document.getElementById('config-title').textContent = p.label + ' 配置';
+    document.getElementById('test-result').className = 'test-result';
+
+    // Key
+    if (p.need_key) {
+        keyGroup.style.display = '';
+        keyLabel.textContent = id === 'wenxin' ? 'API Key (格式: API_KEY:SECRET_KEY)' : 'API Key';
+        keyHint.textContent = p.doc ? '获取地址: ' + p.doc : '';
+        document.getElementById('input-api-key').value = '';
+        if (p.has_key) document.getElementById('input-api-key').placeholder = '已配置，留空则使用已保存的 Key';
+    } else {
+        keyGroup.style.display = 'none';
+    }
+
+    // URL
+    const cfg = p;
+    const hasDefaultUrl = id === 'ollama' || id === 'custom' || id === 'qwen' || id === 'glm' || id === 'kimi';
+    if (id === 'custom' || id === 'ollama') {
+        urlGroup.style.display = '';
+        document.getElementById('url-label').textContent = id === 'ollama' ? 'Ollama 地址' : '自定义 API 地址';
+        document.getElementById('input-base-url').value = id === 'ollama' ? 'http://localhost:11434' : '';
+        urlHint.textContent = id === 'ollama' ? '默认: http://localhost:11434' : 'OpenAI 兼容接口地址';
+    } else {
+        urlGroup.style.display = 'none';
+        document.getElementById('input-base-url').value = '';
+    }
+
+    // Model
+    modelSelect.innerHTML = '<option value="">-- 选择模型 --</option>';
+    if (p.models && p.models.length > 0) {
+        p.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m; opt.textContent = m;
+            if (m === p.default_model) opt.selected = true;
+            modelSelect.appendChild(opt);
+        });
+        modelSelect.classList.remove('hidden');
+        modelCustom.classList.add('hidden');
+    } else if (id === 'ollama') {
+        modelSelect.classList.remove('hidden');
+        modelCustom.classList.remove('hidden');
+        loadOllamaModels();
+    } else if (id === 'custom') {
+        modelSelect.classList.add('hidden');
+        modelCustom.classList.remove('hidden');
+        modelCustom.placeholder = '输入模型名称，如 gpt-4o';
+    } else {
+        modelSelect.classList.remove('hidden');
+    }
+}
+
+async function loadOllamaModels() {
+    const select = document.getElementById('input-model-select');
+    try {
+        const resp = await fetch(API + '/api/llm/models/ollama');
+        const data = await resp.json();
+        if (data.models && data.models.length > 0) {
+            data.models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m; opt.textContent = m;
+                select.appendChild(opt);
+            });
+        } else {
+            select.innerHTML = '<option value="">未检测到本地模型</option>';
+        }
+    } catch(e) {
+        select.innerHTML = '<option value="">Ollama 未连接</option>';
+    }
+}
+
+async function testModel() {
+    const resultDiv = document.getElementById('test-result');
+    resultDiv.className = 'test-result';
+    resultDiv.textContent = '正在测试连接...';
+
+    const provider = selectedProvider;
+    const api_key = document.getElementById('input-api-key').value;
+    const base_url = document.getElementById('input-base-url').value;
+    const model = document.getElementById('input-model-select').value || document.getElementById('input-model-custom').value;
+
+    try {
+        const resp = await fetch(API + '/api/llm/test', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({provider, api_key, base_url, model}),
+        });
+        const data = await resp.json();
+        if (data.success) {
+            resultDiv.className = 'test-result success';
+            resultDiv.textContent = '连接成功! 响应: ' + data.response;
+        } else {
+            resultDiv.className = 'test-result error';
+            resultDiv.textContent = '连接失败: ' + data.error;
+        }
+    } catch(e) {
+        resultDiv.className = 'test-result error';
+        resultDiv.textContent = '测试失败: ' + e.message;
+    }
+}
+
+async function saveConfig() {
+    const provider = selectedProvider;
+    if (!provider) { showToast('请先选择模型提供商'); return; }
+
+    const api_key = document.getElementById('input-api-key').value;
+    const base_url = document.getElementById('input-base-url').value;
+    const model = document.getElementById('input-model-select').value || document.getElementById('input-model-custom').value;
+
+    try {
+        const resp = await fetch(API + '/api/llm/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({provider, api_key, base_url, model}),
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showToast(data.message, true);
+            updateBadge(provider);
+            closeSettings();
+        } else {
+            showToast('保存失败: ' + JSON.stringify(data));
+        }
+    } catch(e) {
+        showToast('保存失败: ' + e.message);
+    }
+}
+
+async function resetConfig() {
+    try {
+        const resp = await fetch(API + '/api/llm/reset', {method: 'POST'});
+        const data = await resp.json();
+        if (data.success) {
+            showToast('已恢复默认配置', true);
+            loadProviders();
+            closeSettings();
+        }
+    } catch(e) {
+        showToast('重置失败: ' + e.message);
+    }
+}
+
+function updateBadge(providerId) {
+    const badge = document.getElementById('model-name');
+    const dot = document.getElementById('model-dot');
+    const p = providers.find(x => x.id === providerId);
+    if (p) {
+        badge.textContent = p.label;
+        dot.className = 'dot ' + ((p.has_key || !p.need_key) ? 'connected' : 'custom');
+    } else {
+        badge.textContent = '未配置模型';
+        dot.className = 'dot';
+    }
+}
+
+function openSettings() { document.getElementById('settings-overlay').classList.add('open'); }
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
+
+// 点击遮罩关闭
+document.getElementById('settings-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+});
+
+// ── Main Flow ──
+async function loadQuestions() {
+    try {
+        const resp = await fetch(API + '/api/questions');
+        const data = await resp.json();
+        questions = data.questions;
+        renderQuestions();
+    } catch(e) { showToast('问卷加载失败: ' + e.message); }
+}
+
+function renderQuestions() {
+    const container = document.getElementById('questions-container');
+    container.innerHTML = questions.map((q, i) => `
+        <div class="question" id="q${q.id}">
+            <div class="q-text">${i+1}. ${q.text}</div>
+            <div class="q-options">
+                <div class="q-option" onclick="selectAnswer(${q.id}, 'A', this)">${q.optionA}</div>
+                <div class="q-option" onclick="selectAnswer(${q.id}, 'B', this)">${q.optionB}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectAnswer(qid, answer, el) {
+    answers[qid] = answer;
+    const qDiv = document.getElementById('q' + qid);
+    qDiv.querySelectorAll('.q-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function goToStep2() {
+    const y = document.getElementById('birth_year').value;
+    const m = document.getElementById('birth_month').value;
+    const d = document.getElementById('birth_day').value;
+    const h = document.getElementById('birth_hour').value;
+    if (!y || !m || !d || h === '') { showToast('请填写完整的出生日期和时间'); return; }
+
+    // Check model configured
+    const dot = document.getElementById('model-dot');
+    if (dot.className === 'dot') {
+        showToast('请先配置大模型（点击右上角设置）'); return;
+    }
+
+    document.getElementById('section-info').classList.add('hidden');
+    document.getElementById('section-test').classList.remove('hidden');
+    document.getElementById('step1').classList.replace('active', 'done');
+    document.getElementById('step2').classList.add('active');
+}
+
+function goToStep1() {
+    document.getElementById('section-test').classList.add('hidden');
+    document.getElementById('section-info').classList.remove('hidden');
+    document.getElementById('step1').classList.replace('done', 'active');
+    document.getElementById('step2').classList.remove('active');
+}
+
+async function startGenerate() {
+    if (Object.keys(answers).length < 10) { showToast('请完成所有10道心性测试题'); return; }
+
+    document.getElementById('section-test').classList.add('hidden');
+    document.getElementById('section-generating').classList.remove('hidden');
+    document.getElementById('step2').classList.replace('active', 'done');
+    document.getElementById('step3').classList.add('active');
+    document.getElementById('btn-generate').disabled = true;
+
+    const user = {
+        name: document.getElementById('name').value,
+        gender: document.getElementById('gender').value,
+        birth_year: parseInt(document.getElementById('birth_year').value),
+        birth_month: parseInt(document.getElementById('birth_month').value),
+        birth_day: parseInt(document.getElementById('birth_day').value),
+        birth_hour: parseInt(document.getElementById('birth_hour').value),
+        birthplace: document.getElementById('birthplace').value,
+        longitude: parseFloat(document.getElementById('longitude').value) || 116.4,
+        lunar_month: parseInt(document.getElementById('lunar_month').value) || null,
+        lunar_day: parseInt(document.getElementById('lunar_day').value) || null,
+    };
+
+    const statusMap = {
+        'started': '正在初始化...',
+        'building_chart': '验证出生数据 & 公历转农历中...',
+        'round1_pattern': 'R1 格局定性分析中...',
+        'round2_cross': 'R2 三系交叉验证中...',
+        'round3_liunian': 'R3 流年推演中...',
+        'round4_paths': 'R4 路径生成中...',
+        'assembling': '正在组装报告...',
+        'completed': '报告生成完成!',
+        'error': '生成出错',
+    };
+
+    try {
+        const startResp = await fetch(API + '/api/generate-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, answers }),
+        });
+        const startData = await startResp.json();
+        taskId = startData.task_id;
+
+        const poll = setInterval(async () => {
+            try {
+                const resp = await fetch(API + '/api/task/' + taskId);
+                const data = await resp.json();
+                const pct = data.progress || 0;
+                document.getElementById('progress-fill').style.width = pct + '%';
+                document.getElementById('status-text').textContent = statusMap[data.status] || data.status;
+
+                if (data.status === 'completed') {
+                    clearInterval(poll);
+                    sessionStorage.setItem('mingli_report', JSON.stringify(data));
+                    window.location.href = '/report';
+                } else if (data.status === 'error') {
+                    clearInterval(poll);
+                    showToast('报告生成失败: ' + (data.error || '未知错误'));
+                    document.getElementById('btn-generate').disabled = false;
+                }
+            } catch(e) {}
+        }, 2000);
+    } catch(e) {
+        showToast('启动失败: ' + e.message);
+        document.getElementById('btn-generate').disabled = false;
+    }
+}
+
+function showToast(msg, isSuccess) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast' + (isSuccess ? ' success' : '');
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 4000);
+}
+
+// Init
+loadProviders();
+loadQuestions();
+</script>
+<footer style="text-align:center;padding:20px;color:#8888aa;font-size:13px;border-top:1px solid #2a2a4a;margin-top:40px;">
+    ⚠️ 本程序仅供编程学习与传统文化技术交流，生成内容由 AI 基于概率产生，不作为任何决策依据。<br>
+    <strong style="color:#e17055;">内容仅供娱乐，请相信科学。</strong>
+</footer>
+</body>
+</html>

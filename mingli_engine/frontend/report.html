@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MingLi Engine - 命理报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f0f1a; --card: #1a1a2e; --border: #2a2a4a;
+            --text: #e0e0e0; --text-muted: #8888aa; --accent: #6c5ce7;
+            --accent-light: #a29bfe; --gold: #ffd700; --success: #00b894;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 1.6em;
+            background: linear-gradient(135deg, var(--gold), var(--accent-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .btn {
+            padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-muted); cursor: pointer;
+            font-size: 0.9em; transition: all 0.2s;
+        }
+        .btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+        /* Report Content */
+        #report-content {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 32px; line-height: 1.8;
+        }
+        #report-content h1 {
+            font-size: 1.8em; color: var(--gold); margin: 24px 0 16px;
+            padding-bottom: 10px; border-bottom: 1px solid var(--border);
+        }
+        #report-content h2 {
+            font-size: 1.4em; color: var(--accent-light); margin: 24px 0 12px;
+        }
+        #report-content h3 {
+            font-size: 1.15em; color: var(--text); margin: 16px 0 8px;
+        }
+        #report-content h4 {
+            font-size: 1.05em; color: var(--accent-light); margin: 12px 0 6px;
+        }
+        #report-content p { margin: 8px 0; }
+        #report-content strong { color: var(--gold); }
+        #report-content a { color: var(--accent-light); }
+        #report-content blockquote {
+            border-left: 3px solid var(--accent); padding: 12px 20px;
+            background: rgba(108,92,231,0.05); border-radius: 0 8px 8px 0;
+            margin: 16px 0; color: var(--text-muted);
+        }
+        #report-content table {
+            width: 100%; border-collapse: collapse; margin: 12px 0;
+        }
+        #report-content th, #report-content td {
+            padding: 8px 12px; border: 1px solid var(--border); text-align: left;
+            font-size: 0.9em;
+        }
+        #report-content th { background: rgba(108,92,231,0.1); color: var(--accent-light); }
+        #report-content ul, #report-content ol { padding-left: 24px; margin: 8px 0; }
+        #report-content li { margin: 4px 0; }
+        #report-content hr {
+            border: none; border-top: 1px solid var(--border); margin: 24px 0;
+        }
+
+        /* Energy Curve */
+        .chart-section {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 24px; margin: 24px 0;
+        }
+        .chart-section h2 {
+            color: var(--accent-light); margin-bottom: 16px;
+        }
+        .chart-container { position: relative; height: 300px; }
+
+        /* Bazi Table Special */
+        .bazi-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+            margin: 16px 0;
+        }
+        .bazi-cell {
+            text-align: center; padding: 16px;
+            border: 1px solid var(--border); border-radius: 10px;
+            background: rgba(108,92,231,0.05);
+        }
+        .bazi-cell .label { font-size: 0.8em; color: var(--text-muted); margin-bottom: 8px; }
+        .bazi-cell .gan { font-size: 1.6em; color: var(--gold); }
+        .bazi-cell .zhi { font-size: 1.6em; color: var(--accent-light); margin-top: 4px; }
+        .bazi-cell .shishen { font-size: 0.85em; color: var(--text-muted); margin-top: 8px; }
+
+        .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+        .loading .spinner {
+            display: inline-block; width: 40px; height: 40px;
+            border: 3px solid var(--border); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; }
+        .tab {
+            padding: 8px 16px; border-radius: 8px 8px 0 0;
+            background: var(--bg); border: 1px solid var(--border);
+            border-bottom: none; cursor: pointer; font-size: 0.9em;
+            color: var(--text-muted); transition: all 0.2s;
+        }
+        .tab.active { background: var(--card); color: var(--accent-light); border-color: var(--accent); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>MingLi Engine</h1>
+        <button class="btn" onclick="window.location.href='/'">返回首页</button>
+    </div>
+
+    <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('report')">完整报告</div>
+        <div class="tab" onclick="switchTab('bazi')">八字命盘</div>
+        <div class="tab" onclick="switchTab('energy')">能量曲线</div>
+    </div>
+
+    <div id="tab-report">
+        <div id="report-content">
+            <div class="loading"><div class="spinner"></div><p>加载报告中...</p></div>
+        </div>
+    </div>
+
+    <div id="tab-bazi" class="hidden">
+        <div id="bazi-detail" class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+
+    <div id="tab-energy" class="hidden">
+        <div class="chart-section">
+            <h2>人生能量曲线</h2>
+            <div class="chart-container"><canvas id="energyChart"></canvas></div>
+        </div>
+        <div id="heatmap-detail" class="card"></div>
+    </div>
+</div>
+
+<script>
+let reportData = null;
+
+function loadReport() {
+    const raw = sessionStorage.getItem('mingli_report');
+    if (!raw) {
+        document.getElementById('report-content').innerHTML = '<p style="text-align:center;color:var(--danger)">未找到报告数据，请返回首页重新生成。</p>';
+        return;
+    }
+    reportData = JSON.parse(raw);
+
+    // Render markdown report
+    if (reportData.report_md) {
+        document.getElementById('report-content').innerHTML = marked.parse(reportData.report_md);
+    }
+
+    // Render bazi detail
+    renderBaziDetail();
+
+    // Render energy curve
+    renderEnergyChart();
+}
+
+function renderBaziDetail() {
+    const bazi = reportData.chart_data?.bazi;
+    if (!bazi) return;
+
+    const fe = bazi.five_elements_score || {};
+    const total = Object.values(fe).reduce((a,b) => a+b, 0) || 1;
+
+    document.getElementById('bazi-detail').innerHTML = `
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;">
+            <h2 style="color:var(--accent-light);margin-bottom:20px;">八字命盘详情</h2>
+            <div class="bazi-grid">
+                <div class="bazi-cell">
+                    <div class="label">年柱</div>
+                    <div class="gan">${bazi.year_stem}</div>
+                    <div class="zhi">${bazi.year_branch}</div>
+                    <div class="shishen">${bazi.ten_gods?.year?.stem || ''}</div>
+                </div>
+                <div class="bazi-cell">
+                    <div class="label">月柱</div>
+                    <div class="gan">${bazi.month_stem}</div>
+                    <div class="zhi">${bazi.month_branch}</div>
+                    <div class="shishen">${bazi.ten_gods?.month?.stem || ''}</div>
+                </div>
+                <div class="bazi-cell" style="border-color:var(--gold);">
+                    <div class="label">日柱（日主）</div>
+                    <div class="gan" style="font-size:1.8em;">${bazi.day_stem}</div>
+                    <div class="zhi">${bazi.day_branch}</div>
+                    <div class="shishen" style="color:var(--gold);">${bazi.day_master_wuxing} · ${bazi.day_master_strength}</div>
+                </div>
+                <div class="bazi-cell">
+                    <div class="label">时柱</div>
+                    <div class="gan">${bazi.hour_stem}</div>
+                    <div class="zhi">${bazi.hour_branch}</div>
+                    <div class="shishen">${bazi.ten_gods?.hour?.stem || ''}</div>
+                </div>
+            </div>
+            <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div>
+                    <h3 style="color:var(--accent-light);margin-bottom:8px;">五行分布</h3>
+                    <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;">
+                        ${['金','木','水','火','土'].map((e,i) => {
+                            const colors = ['#ffd700','#00b894','#74b9ff','#e17055','#a29bfe'];
+                            const pct = total > 0 ? (fe[e]||0)/total*100 : 20;
+                            return `<div style="width:${pct}%;background:${colors[i]};display:flex;align-items:center;justify-content:center;font-size:0.75em;" title="${e}: ${fe[e]||0}">${e}${fe[e]||0}</div>`;
+                        }).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color:var(--accent-light);margin-bottom:8px;">喜忌用神</h3>
+                    <p>喜用：${(bazi.xi_yong_shen||[]).join('、') || '未知'}</p>
+                    <p>忌神：${(bazi.ji_shen||[]).join('、') || '未知'}</p>
+                </div>
+            </div>
+            <div style="margin-top:16px;">
+                <h3 style="color:var(--accent-light);margin-bottom:8px;">格局：${bazi.pattern || '未知'}</h3>
+            </div>
+        </div>
+    `;
+}
+
+function renderEnergyChart() {
+    const round3 = reportData.round3;
+    if (!round3 || !round3.energy_curve) return;
+
+    const data = round3.energy_curve;
+    new Chart(document.getElementById('energyChart'), {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.age + '岁'),
+            datasets: [{
+                label: '人生能量指数',
+                data: data.map(d => d.score),
+                borderColor: '#a29bfe',
+                backgroundColor: 'rgba(162,155,254,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#ffd700',
+                pointRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#8888aa' } } },
+            scales: {
+                x: { ticks: { color: '#8888aa' }, grid: { color: '#2a2a4a' } },
+                y: { ticks: { color: '#8888aa' }, grid: { color: '#2a2a4a' }, min: 0, max: 100 }
+            }
+        }
+    });
+
+    // 热力图
+    if (round3.quarterly_heatmap) {
+        document.getElementById('heatmap-detail').innerHTML = `
+            <h2 style="color:var(--accent-light);margin-bottom:16px;">年度热力图</h2>
+            <table style="width:100%;border-collapse:collapse;">
+                <tr style="color:var(--accent-light);">
+                    <th style="padding:10px;border:1px solid var(--border);">季度</th>
+                    <th style="padding:10px;border:1px solid var(--border);">能量</th>
+                    <th style="padding:10px;border:1px solid var(--border);">优势</th>
+                    <th style="padding:10px;border:1px solid var(--border);">风险</th>
+                    <th style="padding:10px;border:1px solid var(--border);">建议</th>
+                </tr>
+                ${round3.quarterly_heatmap.map(q => `
+                    <tr>
+                        <td style="padding:10px;border:1px solid var(--border);font-weight:bold;">${q.period}</td>
+                        <td style="padding:10px;border:1px solid var(--border);text-align:center;">
+                            ${'<span style="color:var(--gold);">★</span>'.repeat(q.energy_level)}${'<span style="color:var(--border);">☆</span>'.repeat(5-q.energy_level)}
+                        </td>
+                        <td style="padding:10px;border:1px solid var(--border);color:var(--success);">${q.advantage}</td>
+                        <td style="padding:10px;border:1px solid var(--border);color:var(--danger);">${q.risk}</td>
+                        <td style="padding:10px;border:1px solid var(--border);">${q.advice}</td>
+                    </tr>
+                `).join('')}
+            </table>
+        `;
+    }
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    ['report', 'bazi', 'energy'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+    });
+}
+
+loadReport();
+</script>
+<footer style="text-align:center;padding:20px;color:#8888aa;font-size:13px;border-top:1px solid #2a2a4a;margin-top:40px;">
+    ⚠️ 本报告内容由大语言模型基于概率生成，不代表客观事实，不作为任何决策依据。<br>
+    <strong style="color:#e17055;">内容仅供娱乐，请相信科学。</strong>
+</footer>
+</body>
+</html>
