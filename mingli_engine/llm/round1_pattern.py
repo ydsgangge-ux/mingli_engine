@@ -20,6 +20,10 @@ USER_PROMPT_TEMPLATE = """以下是八字排盘数据：
 
 {bazi_json}
 
+以下是用户家庭背景信息（辅助解盘参考）：
+
+{family_info}
+
 请完成格局定性分析，输出严格符合以下JSON结构：
 {{
   "pattern_name": "格局名称",
@@ -28,20 +32,36 @@ USER_PROMPT_TEMPLATE = """以下是八字排盘数据：
   "xi_shen_reasoning": "喜用神分析推理（100-200字）",
   "character_traits": ["性格特征1", "性格特征2", "性格特征3", "性格特征4", "性格特征5"],
   "life_risks": ["人生风险点1", "人生风险点2"],
+  "family_influence_note": "结合家庭背景的简短解读（100字以内，说明家庭出身对命局的可能影响）",
   "disputes": null
 }}
 
-注意：disputes 为 null 表示无争议，有争议时填写争议解读字符串。"""
+注意：disputes 为 null 表示无争议，有争议时填写争议解读字符串。
+family_influence_note 结合提供的家庭背景信息，分析家庭环境对命主格局的强化或制约作用。"""
 
 
 async def run_round1(chart_data: dict, provider: str = None) -> dict:
     """执行R1格局定性"""
     bazi = chart_data.get("bazi", {})
+    user = chart_data.get("user", {})
     bazi_json = json.dumps(bazi, ensure_ascii=False, indent=2)
+
+    father_occ = user.get("father_occupation", "")
+    mother_occ = user.get("mother_occupation", "")
+    family_bg = user.get("family_background", "")
+
+    family_parts = []
+    if father_occ:
+        family_parts.append(f"父亲职业：{father_occ}")
+    if mother_occ:
+        family_parts.append(f"母亲职业：{mother_occ}")
+    if family_bg:
+        family_parts.append(f"家庭背景：{family_bg}")
+    family_info = "、".join(family_parts) if family_parts else "未提供家庭背景信息"
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": USER_PROMPT_TEMPLATE.format(bazi_json=bazi_json)},
+        {"role": "user", "content": USER_PROMPT_TEMPLATE.format(bazi_json=bazi_json, family_info=family_info)},
     ]
 
     result = await call_llm_json(messages, provider)

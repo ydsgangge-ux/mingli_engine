@@ -21,6 +21,9 @@ USER_PROMPT_TEMPLATE = """以下是完整数据：
 θᵣ（风险偏好）= {theta_r}（{theta_r_type}）
 θₛ（人际依赖）= {theta_s}（{theta_s_type}）
 
+## 家庭背景
+{family_info}
+
 ## 八字 + 喜用神
 {bazi_json}
 
@@ -58,6 +61,7 @@ USER_PROMPT_TEMPLATE = """以下是完整数据：
       }}
     ]
   }},
+  "family_advantage_analysis": "家庭背景优势分析（150字以内，说明家庭出身对命主人生路径的正向支撑或制约）",
   "major_decisions": {{
     "marriage": "婚姻方面的重大决策建议（200字）",
     "career_change": "职业转换的决策建议（200字）",
@@ -71,7 +75,8 @@ USER_PROMPT_TEMPLATE = """以下是完整数据：
   }}
 }}
 
-每个流年至少2条路径。fate_score 的 base 参考 R3 能量曲线平均值。"""
+每个流年至少2条路径。fate_score 的 base 参考 R3 能量曲线平均值。
+family_advantage_analysis 需要结合家庭背景信息（父母职业、家境等），分析家庭资源对命主命运轨迹的加成或限制。"""
 
 THETA_TYPE_MAP = {
     "保守型": "倾向于规避风险、稳健行事",
@@ -89,11 +94,25 @@ async def run_round4(chart_data: dict, round1_result: dict, round2_result: dict,
     personality = chart_data.get("personality", {})
     bazi = chart_data.get("bazi", {})
     dayun = chart_data.get("dayun", {})
+    user = chart_data.get("user", {})
 
     theta_r = personality.get("theta_r", 0)
     theta_r_type = personality.get("theta_r_type", "中性稳健型")
     theta_s = personality.get("theta_s", 0)
     theta_s_type = personality.get("theta_s_type", "均衡型")
+
+    father_occ = user.get("father_occupation", "")
+    mother_occ = user.get("mother_occupation", "")
+    family_bg = user.get("family_background", "")
+
+    family_parts = []
+    if father_occ:
+        family_parts.append(f"父亲职业：{father_occ}")
+    if mother_occ:
+        family_parts.append(f"母亲职业：{mother_occ}")
+    if family_bg:
+        family_parts.append(f"家庭背景：{family_bg}")
+    family_info = "、".join(family_parts) if family_parts else "未提供家庭背景信息"
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -102,6 +121,7 @@ async def run_round4(chart_data: dict, round1_result: dict, round2_result: dict,
             theta_r_type=f"{theta_r_type}（{THETA_TYPE_MAP.get(theta_r_type, '')}）",
             theta_s=theta_s,
             theta_s_type=f"{theta_s_type}（{THETA_TYPE_MAP.get(theta_s_type, '')}）",
+            family_info=family_info,
             bazi_json=json.dumps(bazi, ensure_ascii=False, indent=2),
             dayun_json=json.dumps(dayun, ensure_ascii=False, indent=2),
             round1_json=json.dumps(round1_result, ensure_ascii=False, indent=2),

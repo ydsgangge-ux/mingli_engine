@@ -303,6 +303,23 @@
                 <input type="number" id="lunar_day" placeholder="" min="1" max="30">
             </div>
         </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>父亲职业（选填）</label>
+                <input type="text" id="father_occupation" placeholder="如：工程师、教师、经商等">
+            </div>
+            <div class="form-group">
+                <label>母亲职业（选填）</label>
+                <input type="text" id="mother_occupation" placeholder="如：医生、公务员、全职主妇等">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group" style="flex: 1; min-width: 100%;">
+                <label>家庭背景（选填）</label>
+                <input type="text" id="family_background" placeholder="如：普通工薪家庭、经商世家、农村出身等，简要描述家庭环境">
+                <div class="hint">同年同月同日同时同地出生，家世不同命运迥异。此信息辅助大模型更精准解读。</div>
+            </div>
+        </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="goToStep2()">下一步：心性测试</button>
         </div>
@@ -360,10 +377,10 @@
             <div class="form-group">
                 <label>模型</label>
                 <div class="model-select-row">
-                    <select id="input-model-select">
+                    <select id="input-model-select" onchange="onModelSelectChange()">
                         <option value="">-- 选择模型 --</option>
                     </select>
-                    <input type="text" id="input-model-custom" class="hidden" placeholder="输入模型名称">
+                    <input type="text" id="input-model-custom" class="hidden" placeholder="或手动输入模型名称...">
                 </div>
             </div>
 
@@ -462,6 +479,10 @@ function selectProvider(id) {
 
     // Model
     modelSelect.innerHTML = '<option value="">-- 选择模型 --</option>';
+    modelCustom.classList.add('hidden');
+    modelCustom.value = '';
+    modelCustom.placeholder = '或手动输入模型名称...';
+
     if (p.models && p.models.length > 0) {
         p.models.forEach(m => {
             const opt = document.createElement('option');
@@ -469,8 +490,12 @@ function selectProvider(id) {
             if (m === p.default_model) opt.selected = true;
             modelSelect.appendChild(opt);
         });
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.textContent = '手动输入...';
+        customOpt.style.color = '#8888aa';
+        modelSelect.appendChild(customOpt);
         modelSelect.classList.remove('hidden');
-        modelCustom.classList.add('hidden');
     } else if (id === 'ollama') {
         modelSelect.classList.remove('hidden');
         modelCustom.classList.remove('hidden');
@@ -481,6 +506,16 @@ function selectProvider(id) {
         modelCustom.placeholder = '输入模型名称，如 gpt-4o';
     } else {
         modelSelect.classList.remove('hidden');
+    }
+}
+
+function onModelSelectChange() {
+    const sel = document.getElementById('input-model-select');
+    const custom = document.getElementById('input-model-custom');
+    if (sel.value === '__custom__') {
+        sel.value = '';
+        custom.classList.remove('hidden');
+        custom.focus();
     }
 }
 
@@ -495,12 +530,24 @@ async function loadOllamaModels() {
                 opt.value = m; opt.textContent = m;
                 select.appendChild(opt);
             });
+            // Also add custom option
+            const customOpt = document.createElement('option');
+            customOpt.value = '__custom__';
+            customOpt.textContent = '手动输入...';
+            customOpt.style.color = '#8888aa';
+            select.appendChild(customOpt);
         } else {
             select.innerHTML = '<option value="">未检测到本地模型</option>';
         }
     } catch(e) {
         select.innerHTML = '<option value="">Ollama 未连接</option>';
     }
+}
+
+function getModelValue() {
+    const customVal = document.getElementById('input-model-custom').value.trim();
+    const selectVal = document.getElementById('input-model-select').value;
+    return customVal || selectVal;
 }
 
 async function testModel() {
@@ -511,7 +558,7 @@ async function testModel() {
     const provider = selectedProvider;
     const api_key = document.getElementById('input-api-key').value;
     const base_url = document.getElementById('input-base-url').value;
-    const model = document.getElementById('input-model-select').value || document.getElementById('input-model-custom').value;
+    const model = getModelValue();
 
     try {
         const resp = await fetch(API + '/api/llm/test', {
@@ -539,7 +586,7 @@ async function saveConfig() {
 
     const api_key = document.getElementById('input-api-key').value;
     const base_url = document.getElementById('input-base-url').value;
-    const model = document.getElementById('input-model-select').value || document.getElementById('input-model-custom').value;
+    const model = getModelValue();
 
     try {
         const resp = await fetch(API + '/api/llm/config', {
@@ -671,6 +718,9 @@ async function startGenerate() {
         longitude: parseFloat(document.getElementById('longitude').value) || 116.4,
         lunar_month: parseInt(document.getElementById('lunar_month').value) || null,
         lunar_day: parseInt(document.getElementById('lunar_day').value) || null,
+        father_occupation: document.getElementById('father_occupation').value,
+        mother_occupation: document.getElementById('mother_occupation').value,
+        family_background: document.getElementById('family_background').value,
     };
 
     const statusMap = {

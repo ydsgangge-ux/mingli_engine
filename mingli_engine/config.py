@@ -5,7 +5,7 @@ LLM_CONFIG = {
     # ── 国产大模型（优先推荐）──
     "deepseek": {
         "api_url": "https://api.deepseek.com",
-        "model": "deepseek-chat",
+        "model": "deepseek-v4-flash",
         "max_tokens": 4000,
         "label": "DeepSeek",
         "need_key": True,
@@ -13,7 +13,7 @@ LLM_CONFIG = {
     },
     "qwen": {
         "api_url": "https://dashscope.aliyuncs.com/compatible-mode",
-        "model": "qwen-plus",
+        "model": "qwen3.7-max",
         "max_tokens": 4000,
         "label": "通义千问 (阿里云)",
         "need_key": True,
@@ -21,7 +21,7 @@ LLM_CONFIG = {
     },
     "glm": {
         "api_url": "https://open.bigmodel.cn/api/paas/v4",
-        "model": "glm-4-flash",
+        "model": "glm-5.1",
         "max_tokens": 4000,
         "label": "智谱 GLM",
         "need_key": True,
@@ -29,7 +29,7 @@ LLM_CONFIG = {
     },
     "kimi": {
         "api_url": "https://api.moonshot.cn",
-        "model": "moonshot-v1-8k",
+        "model": "kimi-k2.6",
         "max_tokens": 4000,
         "label": "Kimi (月之暗面)",
         "need_key": True,
@@ -37,7 +37,7 @@ LLM_CONFIG = {
     },
     "wenxin": {
         "api_url": "",
-        "model": "completions_pro",
+        "model": "ernie-4.5-8k",
         "max_tokens": 4000,
         "label": "文心一言 (百度)",
         "need_key": True,
@@ -46,7 +46,7 @@ LLM_CONFIG = {
     # ── 国际模型 ──
     "openai": {
         "api_url": "https://api.openai.com",
-        "model": "gpt-4o",
+        "model": "gpt-5.3-instant",
         "max_tokens": 4000,
         "label": "OpenAI GPT",
         "need_key": True,
@@ -54,7 +54,7 @@ LLM_CONFIG = {
     },
     "claude": {
         "api_url": "https://api.anthropic.com",
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-opus-4-8",
         "max_tokens": 4000,
         "label": "Claude (Anthropic)",
         "need_key": True,
@@ -82,15 +82,15 @@ LLM_CONFIG = {
 
 # 可选模型列表（用于前端下拉）
 MODEL_OPTIONS = {
-    "deepseek": ["deepseek-chat", "deepseek-reasoner"],
-    "qwen": ["qwen-turbo", "qwen-plus", "qwen-max", "qwen-long"],
-    "glm": ["glm-4-flash", "glm-4-air", "glm-4-plus", "glm-4"],
-    "kimi": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
-    "wenxin": ["completions_pro", "ernie-4.0-8k", "ernie-3.5-8k"],
-    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
-    "claude": ["claude-sonnet-4-20250514", "claude-haiku-4-20250414"],
-    "ollama": [],  # 动态获取
-    "custom": [],  # 用户自填
+    "deepseek": ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"],
+    "qwen": ["qwen3.7-max", "qwen3.6-max-preview", "qwen3.6-plus", "qwen3.6-flash", "qwen3-max", "qwen-max", "qwen-plus", "qwen-turbo"],
+    "glm": ["glm-5.1", "glm-5", "glm-4.5", "glm-4.5-air", "glm-4.5-flash", "glm-4.5-x", "glm-4.5-airx"],
+    "kimi": ["kimi-k2.6", "kimi-k2.6-thinking", "moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+    "wenxin": ["ernie-4.5-8k", "ernie-4.0-8k", "ernie-3.5-8k", "completions_pro"],
+    "openai": ["gpt-5.5", "gpt-5.4", "gpt-5.3", "gpt-5.3-instant", "gpt-5", "gpt-4.1", "gpt-4.1-mini"],
+    "claude": ["claude-opus-4-8", "claude-opus-4-7", "claude-opus-4-20250514", "claude-sonnet-4-20250514", "claude-haiku-4-20250414"],
+    "ollama": [],
+    "custom": [],
 }
 
 # API keys loaded from .env

@@ -65,6 +65,9 @@ class UserInfo(BaseModel):
     longitude: float = 116.4
     lunar_month: Optional[int] = None
     lunar_day: Optional[int] = None
+    father_occupation: str = ""
+    mother_occupation: str = ""
+    family_background: str = ""
 
 
 class PersonalityAnswers(BaseModel):

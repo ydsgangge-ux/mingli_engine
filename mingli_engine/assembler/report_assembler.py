@@ -29,11 +29,19 @@ REPORT_TEMPLATE = """# {name} 的命理分析报告
 - **忌神**：{ji_shen}
 - **五行得分**：金 {fe_jin} | 木 {fe_mu} | 水 {fe_shui} | 火 {fe_huo} | 土 {fe_tu}
 
+### 家庭背景
+
+{family_background_section}
+
 ### 格局定性
 
 **格局**：{pattern_name}
 
 {pattern_reasoning}
+
+### 家庭影响解读
+
+{family_influence_note}
 
 ### 日主分析
 
@@ -111,6 +119,10 @@ REPORT_TEMPLATE = """# {name} 的命理分析报告
 ### 关键流年分叉路径
 
 {paths_section}
+
+### 家庭资源优势分析
+
+{family_advantage_analysis}
 
 ### 重大决策框架
 
@@ -199,6 +211,9 @@ def assemble_report(
         ji_shen="、".join(bazi.get("ji_shen", [])),
         fe_jin=fe.get("金", 0), fe_mu=fe.get("木", 0), fe_shui=fe.get("水", 0),
         fe_huo=fe.get("火", 0), fe_tu=fe.get("土", 0),
+        # 家庭背景
+        family_background_section=_build_family_background_section(user),
+        family_influence_note=round1.get("family_influence_note", "（未分析）"),
         # R1
         pattern_name=round1.get("pattern_name", ""),
         pattern_reasoning=round1.get("pattern_reasoning", ""),
@@ -219,6 +234,7 @@ def assemble_report(
         theta_s_type=personality.get("theta_s_type", ""),
         blind_spots=blind_spots,
         paths_section=paths_section,
+        family_advantage_analysis=round4.get("family_advantage_analysis", "（未分析）"),
         marriage_decision=major.get("marriage", ""),
         career_decision=major.get("career_change", ""),
         investment_decision=major.get("investment", ""),
@@ -336,6 +352,24 @@ def _build_paths_section(round4):
             lines.append(f"- **优化建议**：{p.get('optimization', '')}")
         lines.append("")
 
+    return "\n".join(lines)
+
+
+def _build_family_background_section(user: dict) -> str:
+    father = user.get("father_occupation", "")
+    mother = user.get("mother_occupation", "")
+    bg = user.get("family_background", "")
+
+    if not father and not mother and not bg:
+        return "（未填写家庭背景信息）"
+
+    lines = []
+    if father:
+        lines.append(f"- **父亲职业**：{father}")
+    if mother:
+        lines.append(f"- **母亲职业**：{mother}")
+    if bg:
+        lines.append(f"- **家庭环境**：{bg}")
     return "\n".join(lines)
 
 
